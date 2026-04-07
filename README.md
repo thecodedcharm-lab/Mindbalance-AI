@@ -33,8 +33,10 @@ This project explores how AI can model human burnout and help design better prod
 ## 🎥 Demo
 This project simulates human productivity vs burnout using an AI-based decision system.
 
-## 🧠 Key Idea
-Balancing work and mental health using adaptive strategies.
+## 🤗 Live Demo
+Try it here:
+https://huggingface.co/spaces/thecodedcharm/mindbalance_ai
+
 
 ## 🚀 Run Locally
 pip install gymnasium numpy matplotlib  
