@@ -29,3 +29,13 @@ A smart agent makes decisions to balance:
 
 ## 💡 Idea
 This project explores how AI can model human burnout and help design better productivity systems.
+
+## 🎥 Demo
+This project simulates human productivity vs burnout using an AI-based decision system.
+
+## 🧠 Key Idea
+Balancing work and mental health using adaptive strategies.
+
+## 🚀 Run Locally
+pip install gymnasium numpy matplotlib  
+python mindbalance_ai.py
