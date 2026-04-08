@@ -1,6 +1,9 @@
 import gradio as gr
+import random
+from env.emotion_env import EmotionEnv
 
-# Custom CSS for aesthetic theme
+
+# 🌿 Custom CSS (NOW ACTUALLY USED)
 custom_css = """
 body {
     background: linear-gradient(135deg, #d4f8d4, #e8ffe8);
@@ -28,45 +31,52 @@ textarea {
     border-radius: 10px !important;
 }
 """
-import gradio as gr
-from mindbalance_ai import EmotionEnv, smart_agent
 
+
+# 🤖 SIMPLE AGENT (since “smart_agent” vanished into thin air)
+def smart_agent(env):
+    return random.randint(0, env.action_space.n - 1)
 
 
 def run_simulation(level):
-
     env = EmotionEnv(level=level)
-    env.reset()
+    state = env.reset()
 
     steps = 0
-    result = "Running..."
+    total_reward = 0
 
     for _ in range(50):
         action = smart_agent(env)
-        obs, reward, done, info = env.step(action)
+        state, reward, done, info = env.step(action)
+
+        total_reward += reward
         steps += 1
 
         if done:
-            result = info.get("reason", "Finished")
             break
 
-    burnout_risk = env.stress * (1 - env.energy)
+    # Fake derived emotional metrics (since your env doesn't track them yet)
+    mood = state[0]
+    energy = state[1]
+    stress = state[2]
+
+    burnout_risk = stress * (1 - energy)
 
     return f"""
-🌿 Result: {result}
+🌿 Result: Simulation Complete
 
-💚 Mood: {env.mood:.2f}  
-⚡ Energy: {env.energy:.2f}  
-🔥 Stress: {env.stress:.2f}  
+💚 Mood: {mood:.2f}  
+⚡ Energy: {energy:.2f}  
+🔥 Stress: {stress:.2f}  
 
 🧠 Burnout Risk: {burnout_risk:.2f}
 
-📋 Tasks Left: {env.tasks_remaining}  
+⭐ Total Reward: {total_reward:.2f}  
 ⏱ Steps: {steps}
 """
 
 
-# 🌿 Custom calming theme
+# 🌿 Theme
 theme = gr.themes.Soft(
     primary_hue="green",
     secondary_hue="emerald",
@@ -74,21 +84,17 @@ theme = gr.themes.Soft(
 )
 
 
-with gr.Blocks(theme=theme) as demo:
+with gr.Blocks(theme=theme, css=custom_css) as demo:
 
-    gr.Markdown(
-        """
-        # 🧠🌿 MindBalance AI
-        
-        **AI simulation for balancing productivity and mental health**
-        """
-    )
+    gr.Markdown("""
+    # 🧠🌿 MindBalance AI
+    
+    **AI simulation for balancing productivity and mental health**
+    """)
 
-    gr.Markdown(
-        """
-        Select difficulty and see how the AI manages **stress, mood, energy and workload**.
-        """
-    )
+    gr.Markdown("""
+    Select difficulty and see how the AI manages stress, mood, energy and workload.
+    """)
 
     level = gr.Dropdown(
         ["easy", "medium", "hard"],
@@ -103,7 +109,8 @@ with gr.Blocks(theme=theme) as demo:
         lines=10
     )
 
-    btn.click(run_simulation, inputs=level, outputs=output)
+    btn.click(fn=run_simulation, inputs=level, outputs=output)
 
 
-demo.launch()
+if __name__ == "__main__":
+    demo.launch()
