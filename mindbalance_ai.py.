@@ -1,6 +1,10 @@
 import numpy as np
 
+
 class Space:
+    """
+    Minimal space class compatible with OpenEnv checks
+    """
     def __init__(self, n=None, shape=None):
         self.n = n
         self.shape = shape
@@ -8,34 +12,42 @@ class Space:
 
 class EmotionEnv:
     """
-    Fully OpenEnv + HuggingFace Compatible Environment
+    MindBalance AI Environment
+    Simulates balance between productivity and mental health
     """
 
     def __init__(self, level="medium"):
+
+        # difficulty level
         self.level = level
 
-        # Required for OpenEnv
+        # action and observation spaces
         self.action_space = Space(n=5)
         self.observation_space = Space(shape=(4,))
 
+        # initialize environment
         self.reset()
 
+    # --------------------------------------------------
+
     def reset(self):
-        # 🔥 CRITICAL FIX (handles OpenEnv weird calls)
-        self.level = getattr(self, "level", "medium")
+        """
+        Reset environment state
+        """
 
         config = {
             "easy": {"tasks": 3.0, "stress": 0.1},
             "medium": {"tasks": 6.0, "stress": 0.3},
-            "hard": {"tasks": 10.0, "stress": 0.6}
+            "hard": {"tasks": 10.0, "stress": 0.6},
         }
 
-        curr = config.get(self.level, config["medium"])
+        # fallback if level missing
+        level_config = config.get(self.level, config["medium"])
 
-        self.tasks_remaining = curr["tasks"]
-        self.initial_tasks = curr["tasks"]
+        self.tasks_remaining = float(level_config["tasks"])
+        self.initial_tasks = float(level_config["tasks"])
 
-        self.stress = curr["stress"]
+        self.stress = float(level_config["stress"])
         self.energy = 0.8
         self.mood = 0.5
 
@@ -43,24 +55,39 @@ class EmotionEnv:
 
         return self._get_obs()
 
+    # --------------------------------------------------
+
     def _get_obs(self):
-        return np.array([
+        """
+        Return observation state
+        """
+
+        progress = self.tasks_remaining / max(self.initial_tasks, 1)
+
+        obs = np.array([
             self.mood,
             self.energy,
             self.stress,
-            self.tasks_remaining / 10.0
+            progress
         ], dtype=np.float32)
 
+        return obs
+
+    # --------------------------------------------------
+
     def step(self, action):
+
         reward = 0.0
         done = False
         info = {}
 
+        # REST
         if action == 0:
             self.energy = min(1.0, self.energy + 0.3)
             self.stress = max(0.0, self.stress - 0.05)
             reward += 0.1
 
+        # WORK
         elif action == 1:
             if self.energy > 0.1:
                 self.tasks_remaining -= 1
@@ -70,6 +97,7 @@ class EmotionEnv:
             else:
                 reward -= 0.5
 
+        # DEEP WORK
         elif action == 2:
             if self.energy > 0.4:
                 self.tasks_remaining -= 2
@@ -80,29 +108,31 @@ class EmotionEnv:
                 self.stress = min(1.0, self.stress + 0.4)
                 reward -= 1.5
 
+        # RELAX
         elif action == 3:
             self.stress = max(0.0, self.stress - 0.4)
             self.mood = min(1.0, self.mood + 0.1)
             reward += 0.2
 
+        # MINDFULNESS
         elif action == 4:
             if self.stress > 0.5:
                 self.stress -= 0.2
                 self.mood = min(1.0, self.mood + 0.2)
                 reward += 0.5
 
-        # Mood update
+        # mood dynamics
         if self.stress > 0.7 or self.energy < 0.2:
             self.mood = max(0.0, self.mood - 0.1)
 
-        # Burnout system
+        # burnout system
         if self.stress > 0.85:
             self.steps_in_burnout += 1
             reward -= 1.0
         else:
             self.steps_in_burnout = 0
 
-        # Termination
+        # termination conditions
         if self.steps_in_burnout >= 3:
             done = True
             reward -= 5.0
@@ -113,15 +143,22 @@ class EmotionEnv:
             reward += 5.0
             info["reason"] = "Success"
 
-        return self._get_obs(), float(reward), done, info
+        return self._get_obs(), float(reward), bool(done), info
 
 
-# 🔥 Smart Agent
+# --------------------------------------------------
+# Smart rule-based agent
+# --------------------------------------------------
+
 def smart_agent(env):
+
     if env.stress > 0.75:
         return 3
+
     if env.energy < 0.3:
         return 0
+
     if env.tasks_remaining > 3:
         return 2 if env.energy > 0.5 else 1
+
     return 1
