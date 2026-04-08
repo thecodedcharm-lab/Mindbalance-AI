@@ -1,43 +1,82 @@
-# 🧠 MindBalance AI
+🧠 MindBalance AI
 
-MindBalance AI is a simulation environment that models the balance between productivity and mental health.
+MindBalance AI is a reinforcement-learning simulation environment that models the balance between productivity and mental health.
 
-## 🚀 Features
+The environment simulates how an agent manages workload, stress, and energy while attempting to complete tasks without burning out.
+
+---
+
+🚀 Features
+
 - Emotional state tracking (mood, stress, energy)
-- Task-based workload simulation
+- Task-based productivity simulation
 - Burnout detection system
-- Personality-based behavior
-- Smart decision-making agent
+- Decision-making agent
+- Interactive demo using Gradio
 
-## 🧪 How it works
-The environment simulates human behavior under workload using reinforcement learning concepts.
+---
 
-A smart agent makes decisions to balance:
+🧠 Environment Design
+
+Observation Space
+
+[mood, energy, stress, task_progress]
+
+Action Space
+
+0 – Rest
+1 – Work on task
+2 – Deep work
+3 – Relax
+4 – Mindfulness
+
+Goal
+
+Complete all tasks while maintaining healthy stress and energy levels.
+
+---
+
+🧪 How It Works
+
+The agent must learn to balance:
+
 - Completing tasks
 - Managing stress
-- Maintaining mental health
+- Maintaining mood and energy
 
-## 📊 Output
-- Graphs showing mood, stress, and energy over time
-- Performance score based on efficiency and well-being
+Too much stress leads to burnout, ending the episode.
 
-## 🛠 Tech Used
-- Python
-- Gymnasium
-- NumPy
-- Matplotlib
+---
 
-## 💡 Idea
-This project explores how AI can model human burnout and help design better productivity systems.
+🖥 Live Demo
 
-## 🎥 Demo
-This project simulates human productivity vs burnout using an AI-based decision system.
+Try the interactive demo here:
 
-## 🤗 Live Demo
-Try it here:
 https://huggingface.co/spaces/thecodedcharm/mindbalance_ai
 
+---
 
-## 🚀 Run Locally
-pip install gymnasium numpy matplotlib  
-python mindbalance_ai.py
+🛠 Tech Stack
+
+- Python
+- NumPy
+- Gradio
+
+---
+
+📂 Project Structure
+
+mindbalance_ai/
+├── mindbalance_ai.py
+├── inference.py
+├── app.py
+├── requirements.txt
+├── Dockerfile
+└── README.md
+
+---
+
+🚀 Run Locally
+
+pip install numpy gradio
+python inference.py
