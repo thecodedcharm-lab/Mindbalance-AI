@@ -1,0 +1,26 @@
+name: mindbalance-ai
+
+environment:
+  observation_space:
+    type: object
+    properties:
+      mood:
+        type: number
+      energy:
+        type: number
+      stress:
+        type: number
+      tasks_remaining:
+        type: number
+
+actions:
+  - rest
+  - normal_work
+  - intense_work
+  - relax
+  - mindfulness
+
+tasks:
+  - name: productivity_balance
+    description: Balance completing tasks with maintaining mental health
+    grader: reward
