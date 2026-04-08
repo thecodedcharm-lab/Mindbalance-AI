@@ -1,32 +1,15 @@
-import gymnasium as gym
-from gymnasium import spaces
 import numpy as np
-import matplotlib.pyplot as plt
 
-
-class EmotionEnv(gym.Env):
+class EmotionEnv:
     """
-    MindBalance AI: Advanced Burnout & Productivity Simulator
+    Empathetic Workload & Burnout Environment (OpenEnv Compatible)
     """
 
     def __init__(self, level="medium"):
-        super().__init__()
-
         self.level = level
-
-        # Actions:
-        # 0=Rest, 1=Light Work, 2=Heavy Work, 3=Relax, 4=Journal
-        self.action_space = spaces.Discrete(5)
-
-        self.observation_space = spaces.Box(
-            low=0, high=1, shape=(4,), dtype=np.float32
-        )
-
         self.reset()
 
-    def reset(self, seed=None, options=None):
-        super().reset(seed=seed)
-
+    def reset(self):
         config = {
             "easy": {"tasks": 3.0, "stress": 0.1},
             "medium": {"tasks": 6.0, "stress": 0.3},
@@ -42,21 +25,9 @@ class EmotionEnv(gym.Env):
         self.energy = 0.8
         self.mood = 0.5
 
-        # Advanced systems
-        self.pending_stress = 0.0
-        self.burnout_risk = np.random.uniform(0.65, 0.9)
-
-        self.task_types = ["creative", "boring", "urgent"]
-        self.current_task = np.random.choice(self.task_types)
-
-        self.personality = np.random.choice(
-            ["ambitious", "anxious", "balanced"]
-        )
-
         self.steps_in_burnout = 0
-        self.total_reward = 0.0
 
-        return self._get_obs(), {}
+        return self._get_obs()   # ✅ FIXED (no tuple)
 
     def _get_obs(self):
         return np.array([
@@ -67,184 +38,110 @@ class EmotionEnv(gym.Env):
         ], dtype=np.float32)
 
     def step(self, action):
-
         reward = 0.0
-        terminated = False
-        truncated = False
+        done = False
         info = {}
-
-        # Apply delayed stress
-        self.stress += self.pending_stress
-        self.pending_stress = 0.0
 
         # ACTION LOGIC
         if action == 0:  # REST
-            self.energy = min(1.0, self.energy + 0.25)
+            self.energy = min(1.0, self.energy + 0.3)
             self.stress = max(0.0, self.stress - 0.05)
             reward += 0.1
 
-        elif action == 1:  # LIGHT WORK
-            if self.energy > 0.15:
+        elif action == 1:  # LIGHT TASK
+            if self.energy > 0.1:
                 self.tasks_remaining -= 1
                 self.energy -= 0.1
-                self.pending_stress += 0.12
-                reward += 1.2
+                self.stress += 0.1
+                reward += 1.0
             else:
                 reward -= 0.5
 
-        elif action == 2:  # HEAVY WORK
+        elif action == 2:  # HEAVY TASK
             if self.energy > 0.4:
                 self.tasks_remaining -= 2
                 self.energy -= 0.3
-                self.pending_stress += 0.35
-                reward += 2.8
+                self.stress += 0.3
+                reward += 2.5
             else:
-                self.stress += 0.4
+                self.stress = min(1.0, self.stress + 0.4)
                 reward -= 1.5
 
-        elif action == 3:  # RELAX
+        elif action == 3:  # RELAXATION
             self.stress = max(0.0, self.stress - 0.4)
-            self.mood = min(1.0, self.mood + 0.12)
-            reward += 0.3
+            self.mood = min(1.0, self.mood + 0.1)
+            reward += 0.2
 
-        elif action == 4:  # JOURNAL
+        elif action == 4:  # JOURNALING
             if self.stress > 0.5:
-                self.stress -= 0.25
-                self.mood = min(1.0, self.mood + 0.25)
-                reward += 0.6
+                self.stress -= 0.2
+                self.mood = min(1.0, self.mood + 0.2)
+                reward += 0.5
 
-        # TASK TYPE EFFECTS
-        if self.current_task == "creative":
-            if action == 2:
-                reward += 1.2
-
-        elif self.current_task == "boring":
-            self.stress += 0.06
-
-        elif self.current_task == "urgent":
-            reward += 0.4 if action in [1, 2] else -0.3
-
-        # PERSONALITY EFFECTS
-        if self.personality == "ambitious":
-            reward += 0.25 if action in [1, 2] else -0.15
-            self.pending_stress += 0.1
-
-        elif self.personality == "anxious":
-            self.stress += 0.12
-
-        # MOOD DYNAMICS
+        # MOOD UPDATE
         if self.stress > 0.7 or self.energy < 0.2:
-            self.mood -= 0.12
-        else:
-            self.mood += 0.02
-
-        self.mood = np.clip(self.mood, 0, 1)
-
-        # FINAL REWARD FUNCTION
-        reward += (self.mood * 0.6)
-        reward -= (self.stress * 0.8)
+            self.mood = max(0.0, self.mood - 0.1)
 
         # BURNOUT SYSTEM
-        if self.stress > self.burnout_risk:
+        if self.stress > 0.85:
             self.steps_in_burnout += 1
-            reward -= 1.2
+            reward -= 1.0
         else:
             self.steps_in_burnout = 0
 
-        # TERMINATION
+        # TERMINATION CONDITIONS
         if self.steps_in_burnout >= 3:
-            terminated = True
-            reward -= 6.0
+            done = True
+            reward -= 5.0
             info["reason"] = "Burnout"
 
         if self.tasks_remaining <= 0:
-            terminated = True
-            reward += 6.0
+            done = True
+            reward += 5.0
             info["reason"] = "Success"
 
-        # NEW TASK
-        self.current_task = np.random.choice(self.task_types)
-
-        self.total_reward += reward
-
-        return self._get_obs(), float(reward), terminated, truncated, info
+        return self._get_obs(), float(reward), done, info   # ✅ FIXED
 
 
-# 🔥 SMART + STOCHASTIC AGENT
+# 🔥 SMART AGENT
 def smart_agent(env):
-
-    # 10% randomness (human mistakes)
-    if np.random.rand() < 0.1:
-        return env.action_space.sample()
-
-    # Priority logic
     if env.stress > 0.75:
-        return 3  # relax
+        return 3  # Relax
 
-    if env.energy < 0.25:
-        return 0  # rest
-
-    if env.current_task == "urgent":
-        return 2
+    if env.energy < 0.3:
+        return 0  # Rest
 
     if env.tasks_remaining > 3:
-        return 2
+        return 2 if env.energy > 0.5 else 1
 
-    if env.stress > 0.5:
-        return 4  # journal
-
-    return 1  # light work
+    return 1
 
 
-# EVALUATION
+# 📊 EVALUATION
 def evaluate(env):
     task_score = (env.initial_tasks - env.tasks_remaining) / env.initial_tasks
-    stress_penalty = env.stress * 0.35
-    return round(max(0.0, min((0.75 * task_score - stress_penalty), 1.0)), 2)
+    stress_penalty = env.stress * 0.3
+    final = (0.7 * task_score) - stress_penalty
+    return round(max(0.0, min(final, 1.0)), 2)
 
 
-# 🚀 RUN SIMULATION
+# 🚀 TEST RUN
 if __name__ == "__main__":
-
-    print("🚀 MindBalance AI - Ultimate Version")
-
     for level in ["easy", "medium", "hard"]:
-
-        env = EmotionEnv(level=level)
-        obs, _ = env.reset()
-
-        mood_list, stress_list, energy_list = [], [], []
+        env = EmotionEnv(level)
+        env.reset()
 
         total_reward = 0
 
-        for step in range(80):
-
+        for _ in range(50):
             action = smart_agent(env)
-
-            obs, reward, done, _, info = env.step(action)
-
-            mood_list.append(env.mood)
-            stress_list.append(env.stress)
-            energy_list.append(env.energy)
-
+            obs, reward, done, info = env.step(action)
             total_reward += reward
 
             if done:
                 break
 
         print(f"\nLevel: {level}")
-        print("Personality:", env.personality)
         print("Total Reward:", round(total_reward, 2))
         print("Performance:", evaluate(env))
-        print("End Reason:", info.get("reason", "Not Finished"))
-
-        # GRAPH
-        plt.figure()
-        plt.plot(mood_list, label="Mood")
-        plt.plot(stress_list, label="Stress")
-        plt.plot(energy_list, label="Energy")
-        plt.legend()
-        plt.title(f"Simulation - {level}")
-        plt.xlabel("Steps")
-        plt.ylabel("Value")
-        plt.show()
+        print("End Reason:", info.get("reason", "In Progress"))
